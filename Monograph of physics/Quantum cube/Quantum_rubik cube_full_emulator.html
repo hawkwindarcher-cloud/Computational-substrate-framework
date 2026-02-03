@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Enhanced Quantum Rubik Cube — Multielectron Analysis</title>
+<style>
+  :root{--bg:#0b1020;--panel:#111729;--ink:#e5ecff;--muted:#9bb1ff;--accent:#6ea8fe;--warn:#ffb4b4}
+  *{box-sizing:border-box} html,body{height:100%} body{margin:0;background:#0b1020;color:var(--ink);font:14px/1.4 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
+  .wrap{max-width:1200px;margin:0 auto;padding:12px;display:grid;grid-template-columns:860px 320px;gap:12px}
+  @media (max-width:1200px){.wrap{grid-template-columns:1fr;max-width:900px}}
+  @media (max-width:900px){.wrap{padding:8px;gap:8px}}
+  .card{background:var(--panel);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;border:1px solid rgba(255,255,255,.06)}
+  .card h2{margin:0;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);font-size:16px;letter-spacing:.3px;color:#cfe0ff;background:rgba(255,255,255,.04)}
+  #status{position:fixed;top:8px;left:8px;background:#0d1430;border:1px solid rgba(255,255,255,.15);padding:6px 8px;border-radius:8px;font-size:12px;color:#b9c8ff;z-index:9999}
+  #view{width:860px;height:640px;background:#0a0f1e;border-radius:12px;overflow:hidden}
+  .pad{padding:12px 14px}
+  .grid{display:grid;gap:10px}
+  .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  button,input{background:#141c33;color:var(--ink);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 10px}
+  button{cursor:pointer;transition:.15s ease;box-shadow:0 2px 0 rgba(0,0,0,.4) inset}
+  button:hover{border-color:var(--accent);color:#fff}
+  button.primary{background:linear-gradient(180deg,#2a4bff,#1a39d9);border:none}
+  .bar{height:10px;background:#0d1430;border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden}
+  .fill{height:100%;width:0;background:linear-gradient(90deg,#4dd0ff,#6ea8fe);transition:width .2s}
+  .small{font-size:12px;opacity:.9}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+  
+  /* Enhancement styles */
+  .codec-panel{background:rgba(110,168,254,.05);border:1px solid rgba(110,168,254,.1);border-radius:12px;padding:12px;margin-bottom:12px}
+  .cost-display{display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px}
+  .cost-value{font-family:monospace;font-weight:bold;color:#4dd0ff}
+  .move-cost{font-size:10px;color:var(--muted);margin-left:4px}
+  .hex-display{width:40px;text-align:center;font-family:monospace;font-size:11px;background:#0d1430;color:#4dd0ff}
+</style>
+</head>
+<body>
+<div id="status">Loading…</div>
+
+<div class="wrap">
+  <div class="card">
+    <h2>Enhanced Quantum Rubik Cube — Multielectron System</h2>
+    <div id="view"></div>
+    <div class="pad grid cols-3">
+      <button data-move="R">R <span class="move-cost" id="costR">(10)</span></button>
+      <button data-move="L">L <span class="move-cost" id="costL">(10)</span></button>
+      <button data-move="U">U <span class="move-cost" id="costU">(10)</span></button>
+      <button data-move="D">D <span class="move-cost" id="costD">(10)</span></button>
+      <button data-move="F">F <span class="move-cost" id="costF">(1)</span></button>
+      <button data-move="B">B <span class="move-cost" id="costB">(1)</span></button>
+      <button id="shuffle">Shuffle ×10</button>
+      <button id="reset">Reset</button>
+      <button id="comm" class="primary">[R,U]</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Analysis & Controls</h2>
+    <div class="pad">
+      <!-- Codec Analysis -->
+      <div class="codec-panel">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px">
+          <div>Ops: <span class="cost-value" id="totalOps">0</span></div>
+          <div>Cost: <span class="cost-value" id="totalCost">0</span></div>
+          <div>Electrons: <span class="cost-value" id="electronCount">8</span></div>
+          <div>Avg: <span class="cost-value" id="efficiency">∞</span></div>
+        </div>
+      </div>
+      
+      <!-- System Wrapper -->
+      <div style="margin:8px 0">
+        <div class="small" style="margin-bottom:4px">System Wrapper</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">
+          <div style="text-align:center;font-size:9px">
+            <div style="color:var(--muted)">Phase</div>
+            <input type="text" style="width:35px;text-align:center;font-size:10px;padding:2px" id="wrapperPhase" value="00" readonly>
+          </div>
+          <div style="text-align:center;font-size:9px">
+            <div style="color:var(--muted)">Spatial</div>
+            <input type="text" style="width:35px;text-align:center;font-size:10px;padding:2px" id="wrapperSpatial" value="00" readonly>
+          </div>
+          <div style="text-align:center;font-size:9px">
+            <div style="color:var(--muted)">Entropy</div>
+            <input type="text" style="width:35px;text-align:center;font-size:10px;padding:2px" id="wrapperEntropy" value="00" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div style="margin-top:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+          <div>
+            <div class="small">Electrons</div>
+            <input id="numE" type="number" min="0" max="54" value="8" style="width:50px;font-size:11px"/>
+            <button id="seed" style="font-size:10px;padding:4px 6px">Seed</button>
+          </div>
+          <div>
+            <div class="small">Capacity</div>
+            <input id="kcap" type="number" min="100" step="100" value="1200" style="width:60px;font-size:11px"/>
+            <button id="clearCost" style="font-size:10px;padding:4px 6px">Reset</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:8px">
+          <div class="small">Usage <span class="mono" id="usageLab">0/1200</span></div>
+          <div class="bar" style="height:8px"><div id="usage" class="fill"></div></div>
+          <div id="warn" class="small" style="color:#ffb4b4;display:none">Over capacity</div>
+        </div>
+
+        <div style="font-size:10px">
+          <label><input id="glassToggle" type="checkbox" checked/> Glass</label>
+          <label style="margin-left:8px"><input id="photonsToggle" type="checkbox" checked/> Photons</label>
+          <br>
+          <div style="margin-top:4px">
+            Opacity: <input id="opacity" type="range" min="0.25" max="1" step="0.01" value="0.55" style="width:60px"/>
+          </div>
+          <div style="margin-top:2px">
+            Pauli: <span class="mono" id="pauliLab">0</span> | Load: <span class="mono" id="workLab">0.0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- Enhanced tracking (minimal additions to original) ---------- */
+
+// Simple codec cost tracking
+let totalOpsCount = 0;
+let totalCostSum = 0;
+let quantumWrapper = { Phase: 0, Spatial: 0, Entropy: 0 };
+
+function getMoveCost(symbol, electronCount) {
+  // Simple cost model: F/B=1, U/D=10, R/L=47
+  const baseCost = (symbol === 'F' || symbol === 'B') ? 1 : 
+                   (symbol === 'U' || symbol === 'D') ? 10 : 47;
+  return Math.round(baseCost * Math.sqrt(electronCount + 1));
+}
+
+function updateEnhancedTracking(symbol, electronCount) {
+  const cost = getMoveCost(symbol, electronCount);
+  totalOpsCount++;
+  totalCostSum += cost;
+  
+  // Update wrapper (simplified)
+  quantumWrapper.Phase = (quantumWrapper.Phase + cost * 2) % 255;
+  quantumWrapper.Spatial = (quantumWrapper.Spatial + (cost > 10 ? 40 : 10)) % 255;
+  quantumWrapper.Entropy = (quantumWrapper.Entropy + cost) % 255;
+  
+  // Update displays
+  document.getElementById('totalOps').textContent = totalOpsCount;
+  document.getElementById('totalCost').textContent = totalCostSum;
+  document.getElementById('efficiency').textContent = totalOpsCount > 0 ? 
+    (totalCostSum / totalOpsCount).toFixed(1) : '∞';
+  document.getElementById('wrapperPhase').value = quantumWrapper.Phase.toString(16).padStart(2, '0').toUpperCase();
+  document.getElementById('wrapperSpatial').value = quantumWrapper.Spatial.toString(16).padStart(2, '0').toUpperCase();
+  document.getElementById('wrapperEntropy').value = quantumWrapper.Entropy.toString(16).padStart(2, '0').toUpperCase();
+  
+  // Update cost displays on buttons
+  ['R', 'L', 'U', 'D', 'F', 'B'].forEach(move => {
+    const costEl = document.getElementById(`cost${move}`);
+    if (costEl) costEl.textContent = `(${getMoveCost(move, electronCount)})`;
+  });
+}
+
+function resetEnhancedTracking() {
+  totalOpsCount = 0; totalCostSum = 0;
+  quantumWrapper = { Phase: 0, Spatial: 0, Entropy: 0 };
+  updateEnhancedTracking('F', 8); // Trigger display update
+}
+
+/* ---------- Original quantum cube code (unchanged) ---------- */
+function loadScript(url){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=url; s.onload=()=>res(url); s.onerror=()=>rej(url); document.head.appendChild(s); }); }
+async function tryAny(urls, label){
+  for (const url of urls){
+    try{ document.getElementById('status').textContent = 'Loading '+label+' … '+url; await loadScript(url); return url; }
+    catch(e){ /* keep trying */ }
+  }
+  throw new Error('Failed '+label);
+}
+(async()=>{
+  try{
+    await tryAny([
+      'https://cdn.jsdelivr.net/npm/three@0.128/build/three.min.js',
+      'https://unpkg.com/three@0.128.0/build/three.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'
+    ], 'three.js');
+    await tryAny([
+      'https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js',
+      'https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/OrbitControls.js'
+    ], 'OrbitControls');
+    document.getElementById('status').textContent = 'Enhanced quantum mode ready';
+    mainWebGL();
+  } catch(e){
+    document.getElementById('status').textContent = 'Using enhanced 2D fallback';
+    fallback2D();
+  }
+})();
+
+/* ====================== WebGL version (original + minimal enhancements) ====================== */
+function mainWebGL(){
+  // ---- scene basics
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b1020);
+  const view = document.getElementById('view');
+  const W = 860, H = 640;
+
+  const renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W, H);
+  view.appendChild(renderer.domElement);
+
+  const camera = new THREE.PerspectiveCamera(50, W/H, 0.1, 100);
+  camera.position.set(5.2, 5.6, 6.6);
+
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = 0.08; controls.target.set(0,0,0);
+
+  // lights
+  scene.add(new THREE.AmbientLight(0xffffff, .65));
+  const key = new THREE.DirectionalLight(0xffffff,.8); key.position.set(5,8,10); scene.add(key);
+  const rim = new THREE.DirectionalLight(0x92b4ff,.45); rim.position.set(-6,-3,-5); scene.add(rim);
+
+  // ---- state
+  const root = new THREE.Group(); scene.add(root);
+  const CUBIES = [];
+  const ELECTRONS = new Map();
+  const electronMeshes = new Map();
+  const PHOTONS = [];
+  let EID_NEXT=1, totalCost=0, pauliEvents=0, workload=0;
+  let GLASS=true, CUBE_OPACITY=0.55, SHOW_PHOTONS=true;
+
+  // ---- helpers
+  const usageFill = document.getElementById('usage');
+  const usageLab  = document.getElementById('usageLab');
+  const pauliLab  = document.getElementById('pauliLab');
+  const workLab   = document.getElementById('workLab');
+  const warn      = document.getElementById('warn');
+
+  function updateUI(){
+    const cap = Math.max(1, parseInt(document.getElementById('kcap').value,10) || 1);
+    const pct = Math.min(100, (totalCost/cap)*100);
+    usageLab.textContent = `${totalCost.toFixed(1)} / ${cap}`;
+    usageFill.style.width = pct + '%';
+    pauliLab.textContent = pauliEvents;
+    workLab.textContent = workload.toFixed(1);
+    document.getElementById('electronCount').textContent = ELECTRONS.size;
+  }
+
+  function stickerMat(hex){ return new THREE.MeshStandardMaterial({
+    color:hex, roughness:.35, metalness:.05, emissive:hex, emissiveIntensity:.08,
+    transparent:GLASS, opacity:CUBE_OPACITY, depthWrite:!GLASS
+  });}
+  function bodyMat(){ return new THREE.MeshStandardMaterial({
+    color:0x0f172a, roughness:.85, metalness:.15,
+    transparent:GLASS, opacity:CUBE_OPACITY, depthWrite:!GLASS
+  });}
+
+  function setCubeTransparency(glass, opacity){
+    GLASS=glass; CUBE_OPACITY=opacity;
+    CUBIES.forEach(c=>{
+      const mats = Array.isArray(c.mesh.material)? c.mesh.material : [c.mesh.material];
+      mats.forEach(m=>{ m.transparent=GLASS; m.opacity=CUBE_OPACITY; m.depthWrite=!GLASS; m.needsUpdate=true; });
+    });
+    updateElectronVisuals();
+  }
+
+  function buildCube(){
+    root.clear(); CUBIES.length=0;
+    const colors = { F:0x00cc66, B:0x0066cc, U:0xffff66, D:0xffffff, R:0xff6633, L:0xcc0000 };
+    const edgeMat = new THREE.LineBasicMaterial({ color:0x2a335c, transparent:true, opacity:0.95 });
+
+    for(let x=-1;x<=1;x++){
+      for(let y=-1;y<=1;y++){
+        for(let z=-1;z<=1;z++){
+          const geo = new THREE.BoxGeometry(1,1,1);
+          const mats=[bodyMat(),bodyMat(),bodyMat(),bodyMat(),bodyMat(),bodyMat()];
+          if (x=== 1) mats[0]=stickerMat(colors.R);
+          if (x===-1) mats[1]=stickerMat(colors.L);
+          if (y=== 1) mats[2]=stickerMat(colors.U);
+          if (y===-1) mats[3]=stickerMat(colors.D);
+          if (z=== 1) mats[4]=stickerMat(colors.F);
+          if (z===-1) mats[5]=stickerMat(colors.B);
+
+          const cube = new THREE.Mesh(geo, mats);
+          cube.position.set(x,y,z);
+          cube.userData.idx = {x,y,z};
+
+          const egeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(1.001,1.001,1.001));
+          const edges = new THREE.LineSegments(egeo, edgeMat);
+          edges.scale.set(1.004,1.004,1.004);
+          edges.renderOrder=2; edges.material.depthWrite=false;
+          cube.add(edges);
+
+          root.add(cube);
+          CUBIES.push({mesh:cube, idx:{x,y,z}, electrons:[]});
+        }
+      }
+    }
+
+    const grid = new THREE.GridHelper(8,8,0x183059,0x0f1a3f); grid.position.y=-2.2; root.add(grid);
+  }
+
+  // electrons
+  function outwardNormal(idx){ const v=new THREE.Vector3(idx.x,idx.y,idx.z); return v.length()? v.normalize(): new THREE.Vector3(0,0,1); }
+  function getColor(reg){ const hue=(reg.Phi/(2*Math.PI))*360; return new THREE.Color().setHSL(hue/360,0.85,0.55); }
+  function createSpinArrow(reg){
+    const dir = new THREE.Vector3(Math.cos(reg.Phi), Math.sin(reg.Phi), reg.Id*0.2).normalize();
+    const geo = new THREE.ConeGeometry(0.05,0.26,12);
+    const mat = new THREE.MeshStandardMaterial({color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35});
+    const m = new THREE.Mesh(geo,mat);
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
+    m.quaternion.copy(q); m.position.copy(dir.clone().multiplyScalar(0.22)); return m;
+  }
+  function updateElectronVisuals(){
+    electronMeshes.forEach(m=>scene.remove(m)); electronMeshes.clear();
+    ELECTRONS.forEach((reg,eid)=>{
+      const host = reg.cubie, pos = host.mesh.position.clone();
+      const n = outwardNormal(host.idx);
+      pos.add(n.clone().multiplyScalar(GLASS?0.1:0.28));
+      const idx = host.electrons.indexOf(eid);
+      if (idx>=0){ const t=new THREE.Vector3(-n.y,n.x,n.z).normalize(); pos.add(t.multiplyScalar((idx%2===0)?+0.12:-0.12)); }
+
+      const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.18,24,18),
+        new THREE.MeshStandardMaterial({color:getColor(reg), emissive:getColor(reg), emissiveIntensity:0.45, metalness:0.2, roughness:0.25}));
+      const g = new THREE.Group(); g.add(sphere); g.add(createSpinArrow(reg)); g.position.copy(pos);
+      scene.add(g); electronMeshes.set(eid,g);
+    });
+  }
+  function addElectronRandom(){
+    const surface = CUBIES.filter(c=>Math.abs(c.idx.x)+Math.abs(c.idx.y)+Math.abs(c.idx.z)>=2 && c.electrons.length<2);
+    const pool = surface.length ? surface : CUBIES.filter(c=>c.electrons.length<2);
+    if(!pool.length) return null;
+    const host = pool[(Math.random()*pool.length)|0];
+    const eid = EID_NEXT++;
+    const reg = {eid, cubie:host, Id: Math.random()<0.5?-1:+1, Phi: Math.random()*2*Math.PI,
+                 X:[host.idx.x,host.idx.y,host.idx.z], S:0.7+0.25*Math.random(),
+                 Coh:0.65+0.25*Math.random(), Load:0};
+    ELECTRONS.set(eid, reg); host.electrons.push(eid); return eid;
+  }
+  function seedElectrons(n){
+    ELECTRONS.clear(); CUBIES.forEach(c=>c.electrons.length=0);
+    electronMeshes.forEach(m=>scene.remove(m)); electronMeshes.clear();
+    for(let i=0;i<n;i++) addElectronRandom(); updateElectronVisuals();
+  }
+
+  // photons
+  function spawnPhoton(atPos, dir, color){
+    if(!SHOW_PHOTONS) return;
+    const mat = new THREE.SpriteMaterial({color: color.getHex(), opacity:0.9, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false});
+    const sprite = new THREE.Sprite(mat); sprite.scale.set(0.22,0.22,0.22); sprite.position.copy(atPos);
+    scene.add(sprite);
+    const vel = dir.clone().normalize().multiplyScalar(0.06 + Math.random()*0.05);
+    PHOTONS.push({sprite, vel, life:0, maxLife:650});
+  }
+
+  // moves
+  const LAYERS = { X:s=>CUBIES.filter(c=>c.idx.x===s), Y:s=>CUBIES.filter(c=>c.idx.y===s), Z:s=>CUBIES.filter(c=>c.idx.z===s) };
+  const MOVES = { R:{axis:'X',slice:+1,dir:+1}, L:{axis:'X',slice:-1,dir:-1}, U:{axis:'Y',slice:+1,dir:+1}, D:{axis:'Y',slice:-1,dir:-1}, F:{axis:'Z',slice:+1,dir:+1}, B:{axis:'Z',slice:-1,dir:-1} };
+  let busy=false;
+
+  function rotateIndex(idx,axis,dir){
+    const {x,y,z}=idx;
+    if(axis==='X') return dir>0? {x, y:-z, z:y} : {x, y:z, z:-y};
+    if(axis==='Y') return dir>0? {x:z, y, z:-x} : {x:-z, y, z:x};
+    if(axis==='Z') return dir>0? {x:-y, y:x, z} : {x:y, y:-x, z};
+    return idx;
+  }
+  function animateRotation(group,axis,angle){
+    return new Promise(resolve=>{
+      const T=380, t0=performance.now(), start=group.rotation[axis.toLowerCase()];
+      (function loop(t){
+        const u=Math.min(1,(t-t0)/T), e=0.5-0.5*Math.cos(u*Math.PI);
+        group.rotation[axis.toLowerCase()] = start + angle*e;
+        if(u<1) requestAnimationFrame(loop); else resolve();
+      })(performance.now());
+    });
+  }
+  function snap(mesh){
+    mesh.position.round();
+    mesh.rotation.x = Math.round(mesh.rotation.x/(Math.PI/2))*(Math.PI/2);
+    mesh.rotation.y = Math.round(mesh.rotation.y/(Math.PI/2))*(Math.PI/2);
+    mesh.rotation.z = Math.round(mesh.rotation.z/(Math.PI/2))*(Math.PI/2);
+  }
+
+  async function doMove(symbol, quarter=1){
+    if(busy) return; busy=true;
+    const spec=MOVES[symbol]; if(!spec){busy=false; return;}
+    const layer = LAYERS[spec.axis](spec.slice);
+    const group = new THREE.Group(); root.add(group);
+    layer.forEach(({mesh})=> group.add(mesh));
+    const step = (spec.dir>0? +1:-1) * Math.sign(quarter) * Math.PI/2;
+    await animateRotation(group, spec.axis, step);
+    layer.forEach(({mesh})=>{ mesh.applyMatrix4(group.matrix); root.attach(mesh); snap(mesh); });
+    root.remove(group);
+
+    layer.forEach(c=>{ c.idx = rotateIndex(c.idx, spec.axis, (spec.dir>0? +1:-1)); c.mesh.userData.idx = {...c.idx}; });
+
+    const affectedCubies = LAYERS[spec.axis](spec.slice);
+    const affectedElectrons = affectedCubies.flatMap(c=>c.electrons);
+
+    // ENHANCEMENT: Update codec tracking
+    updateEnhancedTracking(symbol, affectedElectrons.length);
+
+    const moveCost = calculateMoveCost(affectedElectrons);
+    totalCost += moveCost; workload += affectedElectrons.length;
+    affectedElectrons.forEach(eid => updateElectronRegisters(eid));
+
+    const hits = checkPauliExclusionIn(affectedCubies); pauliEvents += hits;
+
+    const capacity = Math.max(1, parseInt(document.getElementById('kcap').value,10)||1);
+    await governor(capacity);
+
+    updateUI(); updateElectronVisuals(); busy=false;
+  }
+
+  function kernelOverlap(a,b){ const dx=a.X[0]-b.X[0], dy=a.X[1]-b.X[1], dz=a.X[2]-b.X[2]; const r2=dx*dx+dy*dy+dz*dz; return 1/(1+r2/1); }
+  function calculateMoveCost(eids){
+    const costs={scalar:1, vector:10, tensor:47}, n=eids.length; if(!n) return 0;
+    let cost=(costs.scalar*0.5 + costs.vector)*n, pair=0;
+    for(let i=0;i<n;i++){ const ei=ELECTRONS.get(eids[i]); if(!ei) continue;
+      for(let j=i+1;j<n;j++){ const ej=ELECTRONS.get(eids[j]); if(!ej) continue; pair+=kernelOverlap(ei,ej); } }
+    return cost + costs.tensor*pair;
+  }
+  function updateElectronRegisters(eid){
+    const e=ELECTRONS.get(eid); if(!e) return;
+    e.Phi=(e.Phi + 0.12 + Math.random()*0.18)%(2*Math.PI);
+    e.Coh=Math.max(0.08, e.Coh - 0.02);
+    e.S  =Math.max(0.08, e.S - 0.01);
+    e.X  =[e.cubie.idx.x, e.cubie.idx.y, e.cubie.idx.z];
+    e.Load += 0.05;
+  }
+  function checkPauliExclusionIn(cubies){
+    const map=new Map(); let ev=0; const round=v=>Math.round(v*8)/8;
+    for(const c of cubies){
+      for(const eid of c.electrons){
+        const e=ELECTRONS.get(eid); if(!e) continue;
+        const sig=`${e.X.join(',')}_${round(e.Phi)}_${e.Id}`;
+        if(map.has(sig)){ e.Id*=-1; e.Phi=(e.Phi+Math.PI)%(2*Math.PI); e.Coh=Math.max(0.1,e.Coh*0.8); ev++; }
+        else map.set(sig,eid);
+      }
+    }
+    return ev;
+  }
+  async function governor(capacity){
+    if(totalCost<=capacity) return;
+    warn.style.display='block';
+    let guard=0;
+    while(totalCost>capacity && guard<240){
+      let hot=null, hv=-1;
+      ELECTRONS.forEach(e=>{ const v=e.S+e.Load; if(v>hv){hv=v; hot=e;} });
+      if(!hot) break;
+      const dS=Math.min(0.08, hot.S);
+      hot.S-=dS; hot.Coh=Math.min(1, hot.Coh+dS*0.5); hot.Load=Math.max(0, hot.Load-dS*0.3);
+      totalCost = Math.max(0, totalCost-0.5);
+
+      const vis=electronMeshes.get(hot.eid);
+      if(vis){ spawnPhoton(vis.position.clone(), outwardNormal(hot.cubie.idx), getColor(hot)); }
+
+      guard++; if(guard%4===0){ updateUI(); await new Promise(r=>setTimeout(r,12)); }
+    }
+    warn.style.display='none';
+  }
+
+  // UI hooks
+  document.querySelectorAll('[data-move]').forEach(b=>b.addEventListener('click', ()=>doMove(b.dataset.move)));
+  document.getElementById('shuffle').addEventListener('click', async ()=>{
+    const m=['R','L','U','D','F','B']; for(let i=0;i<10;i++) await doMove(m[(Math.random()*m.length)|0]);
+  });
+  document.getElementById('reset').addEventListener('click', ()=>{
+    totalCost=0; pauliEvents=0; workload=0; PHOTONS.splice(0).forEach(p=>scene.remove(p.sprite));
+    resetEnhancedTracking();
+    buildCube(); seedElectrons(parseInt(document.getElementById('numE').value,10)); updateUI();
+  });
+  document.getElementById('seed').addEventListener('click', ()=>{
+    seedElectrons(parseInt(document.getElementById('numE').value,10)); updateUI();
+  });
+  document.getElementById('clearCost').addEventListener('click', ()=>{ totalCost=0; resetEnhancedTracking(); updateUI(); });
+  document.getElementById('glassToggle').addEventListener('change', e=> setCubeTransparency(e.target.checked, parseFloat(document.getElementById('opacity').value)));
+  document.getElementById('opacity').addEventListener('input', e=> setCubeTransparency(document.getElementById('glassToggle').checked, parseFloat(e.target.value)));
+  document.getElementById('photonsToggle').addEventListener('change', e=>{ SHOW_PHOTONS = e.target.checked; });
+
+  // build + seed
+  buildCube(); seedElectrons(parseInt(document.getElementById('numE').value,10)); 
+  updateUI(); updateEnhancedTracking('F', 8); // Initialize displays
+
+  // render loop (incl photons)
+  let lastT = performance.now();
+  function animate(){
+    requestAnimationFrame(animate);
+    const now=performance.now(), dt=now-lastT; lastT=now;
+    for(let i=PHOTONS.length-1;i>=0;i--){
+      const p=PHOTONS[i];
+      p.life += dt;
+      p.sprite.position.add(p.vel);
+      const t=Math.min(1, p.life/p.maxLife);
+      p.sprite.material.opacity=(1-t)*0.9;
+      p.sprite.scale.setScalar(0.22+0.25*t);
+      if(p.life>=p.maxLife){ scene.remove(p.sprite); PHOTONS.splice(i,1); }
+    }
+    controls.update();
+    renderer.render(scene,camera);
+  }
+  animate();
+
+  // commutator
+  document.getElementById('comm').addEventListener('click', async ()=>{
+    await doMove('R'); await doMove('U'); await doMove('R',-1); await doMove('U',-1);
+  });
+
+  // keyboard
+  document.addEventListener('keydown', e=>{
+    if(['R','L','U','D','F','B'].includes(e.key.toUpperCase())){ e.preventDefault(); doMove(e.key.toUpperCase()); }
+  });
+}
+
+/* ====================== 2D fallback (original + minimal enhancements) ====================== */
+function fallback2D(){
+  const view = document.getElementById('view');
+  const W=860, H=640;
+  const canvas = document.createElement('canvas'); canvas.width=W; canvas.height=H; view.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  let angle=0, electrons=[], totalCost=0, pauli=0, workload=0, photons=[];
+  function seed(n){
+    electrons = [];
+    for(let i=0;i<n;i++){
+      const gx = (-1 + (i%3)) * 80, gy = (-1 + Math.floor(i/3)%3) * 80;
+      electrons.push({x:gx, y:gy, phi:Math.random()*Math.PI*2, s:0.8, coh:0.8});
+    }
+    document.getElementById('electronCount').textContent = n;
+    updateEnhancedTracking('F', n); // Update displays
+  }
+  seed(8);
+
+  function draw(){
+    ctx.fillStyle='#0a0f1e'; ctx.fillRect(0,0,W,H);
+    const cx=W/2, cy=H/2+20;
+    angle += 0.01;
+    const cos=Math.cos(angle), sin=Math.sin(angle);
+    function P(x,y,z){
+      const X = x*cos - z*sin, Z = x*sin + z*cos;
+      const Y = y*0.8 - Z*0.15;
+      return [cx + X*60, cy + Y*60];
+    }
+    
+    const E=[[ -1,-1,-1, 1,-1,-1],[1,-1,-1,1,1,-1],[1,1,-1,-1,1,-1],[-1,1,-1,-1,-1,-1],
+             [ -1,-1,1, 1,-1,1],[1,-1,1,1,1,1],[1,1,1,-1,1,1],[-1,1,1,-1,-1,1],
+             [ -1,-1,-1,-1,-1,1],[1,-1,-1,1,-1,1],[1,1,-1,1,1,1],[-1,1,-1,-1,1,1]];
+    ctx.lineWidth=1.5; ctx.strokeStyle='#2a335c';
+    ctx.beginPath();
+    E.forEach(e=>{
+      const a=P(e[0],e[1],e[2]), b=P(e[3],e[4],e[5]); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]);
+    });
+    ctx.stroke();
+
+    electrons.forEach((el,i)=>{
+      const p=P(el.x/80, el.y/80, 1);
+      const r=8;
+      ctx.fillStyle='hsl('+((el.phi/Math.PI/2)*360|0)+',85%,60%)';
+      ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#fff'; ctx.beginPath();
+      ctx.moveTo(p[0],p[1]);
+      ctx.lineTo(p[0]+Math.cos(el.phi)*16, p[1]+Math.sin(el.phi)*16);
+      ctx.stroke();
+      el.phi += 0.01;
+    });
+
+    photons.forEach(ph=>{
+      ctx.fillStyle='rgba(120,180,255,'+ph.a+')';
+      ctx.beginPath(); ctx.arc(ph.x, ph.y, 4+3*(1-ph.a), 0, Math.PI*2); ctx.fill();
+      ph.x += ph.vx; ph.y += ph.vy; ph.a *= 0.97;
+    });
+    photons = photons.filter(p=>p.a>0.05);
+
+    const cap = Math.max(1, parseInt(document.getElementById('kcap').value,10)||1);
+    const pct = Math.min(1, totalCost/cap);
+    const fill = document.getElementById('usage'); const lab = document.getElementById('usageLab');
+    fill.style.width = (pct*100)+'%'; lab.textContent = totalCost.toFixed(1)+' / '+cap;
+    document.getElementById('pauliLab').textContent = pauli;
+    document.getElementById('workLab').textContent = workload.toFixed(1);
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+
+  function emitPhoton(){
+    photons.push({x:60,y:60,vx:2+Math.random()*1.5,vy:-1.5+Math.random()*3,a:0.95});
+    totalCost = Math.max(0, totalCost-5);
+  }
+  
+  function doMove2D(symbol){
+    updateEnhancedTracking(symbol, electrons.length);
+    emitPhoton(); totalCost+=30; workload+=3;
+  }
+
+  document.getElementById('shuffle').onclick = ()=>{ 
+    const m=['R','L','U','D','F','B']; for(let i=0;i<5;i++) doMove2D(m[(Math.random()*m.length)|0]);
+  };
+  document.getElementById('reset').onclick = ()=>{ 
+    totalCost=0; pauli=0; workload=0; photons.length=0; resetEnhancedTracking(); seed(parseInt(document.getElementById('numE').value,10)||8); 
+  };
+  document.getElementById('seed').onclick = ()=>{ seed(parseInt(document.getElementById('numE').value,10)||8); };
+  document.getElementById('clearCost').onclick=()=>{ totalCost=0; resetEnhancedTracking(); };
+  
+  ['R','L','U','D','F','B'].forEach(k=>{
+    const b=document.querySelector('[data-move="'+k+'"]'); b.onclick=()=>{ doMove2D(k); };
+  });
+  document.getElementById('comm').onclick=()=>{ ['R','U','R','U'].forEach(move => doMove2D(move)); };
+
+  document.getElementById('glassToggle').onchange = e=> document.getElementById('status').textContent = 'Enhanced 2D fallback · glass='+e.target.checked;
+  document.getElementById('opacity').oninput = e=> document.getElementById('status').textContent = 'Enhanced 2D fallback · opacity='+e.target.value;
+  document.getElementById('photonsToggle').onchange = e=> document.getElementById('status').textContent = 'Enhanced 2D fallback · photons='+(e.target.checked?'on':'off');
+}
+
+// Initialize enhanced displays
+updateEnhancedTracking('F', 8);
+</script>
+</body>
+</html>

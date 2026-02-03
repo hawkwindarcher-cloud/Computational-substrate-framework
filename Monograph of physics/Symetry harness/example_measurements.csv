@@ -1,0 +1,15 @@
+direction,v_measured
++X,1.00
+-X,1.00
++Y,0.80
+-Y,0.80
++Z,0.50
+-Z,0.50
++XY,0.888   # example: face diagonal speed
+-XY,0.888
++YZ,0.615
+-YZ,0.615
++ZX,0.667
+-ZX,0.667
++XYZ,0.714  # example: body diagonal speed
+-XYZ,0.714

@@ -1,0 +1,22 @@
+The Journey of a Wavefunction:
+
+Started as electron (511 keV rest mass, 95% coherent)
+Codec 1 - Scalar field barely contributed (10^-53 eV) - shows mass comes from coherence persistence, not just field strength
+Codec 2 Emission - High entropy (forced to 0.99) triggered photon emission at 2.5 eV, coherence crashed to 47.5% - the cost of radiation
+Codec 2 Absorption - Absorbed 3 eV photon, recovering some coherence - energy exchange restoring order
+Codec 3 Graviton - 1 km wavelength gravitational wave with 10^-21 strain (LIGO scale!), energy 10^-68 eV with massive delay (10^53 s) - shows why gravity is so weak
+Codec 4 Decoherence - Phase fluctuations destroyed coherence, identity dropped to 50% - the wavefunction is losing its grip on what it is
+Codec 5 Confinement - At 10^-14 m² curvature, trapped gluon with 10^-49 eV at 10^-7 m radius - color force holding strong at femtometer scales
+Codec 6 Identity Rewrite - With identity at 40%, couldn't maintain electron state, rewrote as muon (105.7 MeV), absorbed 105 MeV in the process - this is your weak decay mechanism
+Time Evolution - 8 ticks of environmental battering, coherence collapsed from 90% → 10.5%, entropy built to 42%
+
+What this demonstrates:
+
+Wavefunction as active agent managing coherence budget
+All six forces as codec operations on the same entity
+Mass as coherence persistence, not intrinsic property
+Weak force as identity fallback when coherence fails
+Realistic energies and scales throughout
+
+The demo itself predates the fibre formalisation, but it maps clearly to later formalism in the monograph
+

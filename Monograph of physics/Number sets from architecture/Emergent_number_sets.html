@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mathematics Emerging from Register Operations</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        .title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .title h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .title p {
+            color: #6b7280;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
+        
+        .card-content {
+            padding: 1rem;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            min-width: 80px;
+        }
+        
+        .button:hover {
+            background: #2563eb;
+        }
+        
+        .button-secondary {
+            background: #6b7280;
+        }
+        
+        .button-secondary:hover {
+            background: #4b5563;
+        }
+        
+        .button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .grid {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        
+        .grid-5 {
+            grid-template-columns: repeat(5, 1fr);
+        }
+        
+        @media (max-width: 768px) {
+            .grid-2, .grid-3, .grid-4, .grid-5 {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .grid-4, .grid-5 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .slider-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e5e7eb;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .slider-value {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+        
+        .font-mono {
+            font-family: monospace;
+        }
+        
+        .text-2xl {
+            font-size: 1.5rem;
+        }
+        
+        .text-lg {
+            font-size: 1.125rem;
+        }
+        
+        .text-sm {
+            font-size: 0.875rem;
+        }
+        
+        .text-xs {
+            font-size: 0.75rem;
+        }
+        
+        .font-semibold {
+            font-weight: 600;
+        }
+        
+        .font-medium {
+            font-weight: 500;
+        }
+        
+        .text-gray-600 {
+            color: #6b7280;
+        }
+        
+        .text-gray-800 {
+            color: #1f2937;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 1rem;
+            background: #e5e7eb;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #3b82f6;
+            transition: width 0.2s ease;
+        }
+        
+        .phase-circle {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            border: 1px solid #d1d5db;
+            border-radius: 50%;
+        }
+        
+        .phase-vector {
+            position: absolute;
+            width: 2px;
+            height: 40px;
+            background: #ef4444;
+            left: 50%;
+            bottom: 50%;
+            transform-origin: bottom center;
+            transform: translateX(-50%);
+        }
+        
+        .phase-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .phase-center::after {
+            content: '';
+            width: 4px;
+            height: 4px;
+            background: #000;
+            border-radius: 50%;
+        }
+        
+        .complex-plane {
+            position: relative;
+            width: 100%;
+            height: 16rem;
+            border: 1px solid #d1d5db;
+            background: #f9fafb;
+        }
+        
+        .axis {
+            position: absolute;
+        }
+        
+        .axis-horizontal {
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #9ca3af;
+        }
+        
+        .axis-vertical {
+            left: 50%;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: #9ca3af;
+        }
+        
+        .origin {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            background: #000;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .plot-point {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .current-point {
+            width: 12px;
+            height: 12px;
+            background: #dc2626;
+            border: 2px solid white;
+        }
+        
+        .axis-label-x {
+            position: absolute;
+            bottom: 0.5rem;
+            right: 0.5rem;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+        
+        .axis-label-y {
+            position: absolute;
+            top: 0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+        
+        /* Number system specific colors */
+        .naturals { border-color: #bbf7d0; }
+        .naturals h3 { color: #047857; }
+        .naturals .value { color: #065f46; }
+        
+        .integers { border-color: #bfdbfe; }
+        .integers h3 { color: #1d4ed8; }
+        .integers .value { color: #1e3a8a; }
+        
+        .rationals { border-color: #e9d5ff; }
+        .rationals h3 { color: #7c3aed; }
+        .rationals .value { color: #6b21a8; }
+        
+        .reals { border-color: #fed7aa; }
+        .reals h3 { color: #c2410c; }
+        .reals .value { color: #9a3412; }
+        
+        .complex { border-color: #fecaca; }
+        .complex h3 { color: #dc2626; }
+        .complex .value { color: #991b1b; }
+        
+        .space-y-2 > * + * {
+            margin-top: 0.5rem;
+        }
+        
+        .space-y-4 > * + * {
+            margin-top: 1rem;
+        }
+        
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mt-1 { margin-top: 0.25rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        
+        .text-center { text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">
+            <h1>Mathematics Emerging from Register Operations</h1>
+            <p>Watch number systems emerge from physical register dynamics</p>
+        </div>
+
+        <!-- Controls -->
+        <div class="card">
+            <div class="card-content">
+                <div class="controls">
+                    <button id="toggleBtn" class="button">Start</button>
+                    <button id="resetBtn" class="button button-secondary">Reset</button>
+                    <button id="stepBtn" class="button button-secondary">Step</button>
+                    <span class="text-sm">Tick: <span id="tickDisplay">0</span></span>
+                </div>
+                
+                <div class="grid grid-4">
+                    <div class="slider-container">
+                        <label class="slider-label">Threshold</label>
+                        <input type="range" id="thresholdSlider" class="slider" min="5" max="20" step="1" value="10">
+                        <span class="slider-value" id="thresholdValue">10</span>
+                    </div>
+                    <div class="slider-container">
+                        <label class="slider-label">Gain X</label>
+                        <input type="range" id="gainXSlider" class="slider" min="1" max="30" step="1" value="10">
+                        <span class="slider-value" id="gainXValue">1.0</span>
+                    </div>
+                    <div class="slider-container">
+                        <label class="slider-label">Gain Y</label>
+                        <input type="range" id="gainYSlider" class="slider" min="1" max="30" step="1" value="10">
+                        <span class="slider-value" id="gainYValue">1.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register State Display -->
+        <div class="grid grid-3">
+            <div class="card">
+                <div class="card-content">
+                    <h3 class="font-semibold mb-2">Physical Registers</h3>
+                    <div class="space-y-2 text-sm font-mono">
+                        <div>Entropy: <span id="entropyDisplay">0.000</span></div>
+                        <div>Identity: <span id="identityDisplay">1</span></div>
+                        <div>Phase: <span id="phaseDisplay">0.0</span>°</div>
+                        <div>LoadAcc: <span id="loadAccDisplay">0.000</span></div>
+                        <div>Coherence: <span id="coherenceDisplay">1.000</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <h3 class="font-semibold mb-2">Entropy Progress</h3>
+                    <div class="progress-bar">
+                        <div id="entropyProgress" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="text-xs text-gray-600">
+                        <span id="entropyFraction">0.0 / 10</span> (flip at threshold)
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <h3 class="font-semibold mb-2">Phase Vector</h3>
+                    <div class="phase-circle">
+                        <div id="phaseVector" class="phase-vector" style="transform: translateX(-50%) rotate(0deg)"></div>
+                        <div class="phase-center"></div>
+                    </div>
+                    <div class="text-xs text-center mt-1" id="phaseAngle">0.0°</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emerged Number Systems -->
+        <div class="grid grid-5">
+            <div class="card naturals">
+                <div class="card-content">
+                    <h3 class="font-semibold mb-2">ℕ Naturals</h3>
+                    <div class="text-2xl font-mono value" id="naturalValue">0</div>
+                    <div class="text-xs text-gray-600 mt-1">entropy ticks → counting</div>
+                </div>
+            </div>
+
+            <div class="card integers">
+                <div class="card-content">
+                    <h3 class="font-semibold mb-2">ℤ Integers</h3>
+                    <div class="text-2xl font-mono value" id="integerValue">0</div>
+                    <div class="text-xs text-gray-600 mt-1">identity flips → ±</div>
+                </div>
+            </div>
+
+            <div class="card rationals">
+                <div class="card-content">
+                    <h3 class="font-semibold mb-2">ℚ Rationals</h3>
+                    <div class="text-lg font-mono value" id="rationalValue">0.000</div>
+                    <div class="text-xs text-gray-600 mt-1">register ratios → fractions</div>
+                </div>
+            </div>
+
+            <div class="card reals">
+                <div class="card-content">
+                    <h3 class="font-semibold mb-2">ℝ Reals</h3>
+                    <div class="text-lg font-mono value" id="realValue">0.0000</div>
+                    <div class="text-xs text-gray-600 mt-1">continuous register → dense values</div>
+                </div>
+            </div>
+
+            <div class="card complex">
+                <div class="card-content">
+                    <h3 class="font-semibold mb-2">ℂ Complex</h3>
+                    <div class="text-sm font-mono value" id="complexValue">0.00 +0.00i</div>
+                    <div class="text-xs text-gray-600 mt-1">[LoadAcc, Phase] → a+bi</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Complex Plane Visualization -->
+        <div class="card">
+            <div class="card-content">
+                <h3 class="font-semibold mb-4">Complex Number Emergence (Real vs Imaginary)</h3>
+                <div class="complex-plane">
+                    <div class="axis axis-horizontal"></div>
+                    <div class="axis axis-vertical"></div>
+                    <div class="origin"></div>
+                    <div id="complexPlotPoints"></div>
+                    <div class="axis-label-x">Real →</div>
+                    <div class="axis-label-y">↑ Imag</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergence Explanation -->
+        <div class="card">
+            <div class="card-content">
+                <h3 class="font-semibold mb-3">How Mathematics Emerges from Physics</h3>
+                <div class="grid grid-2">
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-medium text-sm" style="color: #047857;">ℕ (Naturals)</h4>
+                            <p class="text-gray-600 text-sm">Each entropy tick increments a counter. Natural numbers emerge as discrete event counts: 0, 1, 2, 3...</p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-medium text-sm" style="color: #1d4ed8;">ℤ (Integers)</h4>
+                            <p class="text-gray-600 text-sm">Identity flips create positive vs negative states. When register empties vs fills, you get ±counts.</p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-medium text-sm" style="color: #7c3aed;">ℚ (Rationals)</h4>
+                            <p class="text-gray-600 text-sm">Ratios between register values create fractions: entropy/threshold, flips/accumulator.</p>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-medium text-sm" style="color: #c2410c;">ℝ (Reals)</h4>
+                            <p class="text-gray-600 text-sm">Continuous register operations (angle × gain) create dense, continuous values filling all gaps.</p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-medium text-sm" style="color: #dc2626;">ℂ (Complex)</h4>
+                            <p class="text-gray-600 text-sm">Dual-channel registers [LoadAcc, Phase] naturally encode real + imaginary components.</p>
+                        </div>
+                        
+                        <div>
+                            <p class="font-medium text-gray-800 text-sm">Mathematics doesn't exist "out there" - it emerges from register dynamics!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Register state variables
+        let entropy = 0;
+        let identity = 1;
+        let phase = 0;
+        let loadAcc = 0;
+        let coherence = 1;
+        
+        // Control parameters
+        let threshold = 10;
+        let gainX = 1;
+        let gainY = 1;
+        let angle = 0;
+        
+        // Emerged numbers
+        let naturalCount = 0;
+        let integerValue = 0;
+        let rationalValue = 0;
+        let realValue = 0;
+        let complexValue = { real: 0, imag: 0 };
+        
+        // History for visualization
+        let history = [];
+        let isRunning = false;
+        let tick = 0;
+        let intervalId = null;
+        
+        // DOM elements
+        const toggleBtn = document.getElementById('toggleBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const stepBtn = document.getElementById('stepBtn');
+        const tickDisplay = document.getElementById('tickDisplay');
+        const thresholdSlider = document.getElementById('thresholdSlider');
+        const gainXSlider = document.getElementById('gainXSlider');
+        const gainYSlider = document.getElementById('gainYSlider');
+
+        // Initialize sliders
+        thresholdSlider.addEventListener('input', (e) => {
+            threshold = parseInt(e.target.value);
+            document.getElementById('thresholdValue').textContent = threshold;
+        });
+
+        gainXSlider.addEventListener('input', (e) => {
+            gainX = parseInt(e.target.value) / 10;
+            document.getElementById('gainXValue').textContent = gainX.toFixed(1);
+        });
+
+        gainYSlider.addEventListener('input', (e) => {
+            gainY = parseInt(e.target.value) / 10;
+            document.getElementById('gainYValue').textContent = gainY.toFixed(1);
+        });
+
+        // Simulate one register tick
+        function simulateTick() {
+            tick++;
+            tickDisplay.textContent = tick;
+            
+            // ℕ (Naturals): Each entropy increment creates counting
+            entropy += gainX * 0.1;
+            naturalCount = Math.floor(entropy);
+            
+            // Update angle for continuous operations
+            angle = (angle + 5) % 360;
+            
+            // ℤ (Integers): Identity flips create positive/negative
+            if (entropy >= threshold) {
+                // Identity flip occurs
+                identity = 1 - identity; // Flip between 0 and 1
+                integerValue = identity === 1 ? Math.floor(entropy) : -Math.floor(entropy);
+                entropy = 0; // Reset entropy after flip
+            }
+            
+            // ℚ (Rationals): Ratio of register values
+            rationalValue = entropy / threshold;
+            
+            // ℝ (Reals): Continuous register operations
+            realValue = (angle / 360) * gainX + (entropy / threshold) * gainY;
+            
+            // Update phase for complex numbers
+            phase = (phase + 3) % 360;
+            
+            // Update LoadAcc based on entropy
+            loadAcc = entropy * 0.1;
+            
+            // ℂ (Complex): Dual-channel [LoadAcc, Phase] encoding
+            const real = loadAcc * Math.cos(phase * Math.PI / 180);
+            const imag = loadAcc * Math.sin(phase * Math.PI / 180);
+            complexValue = { real, imag };
+            
+            // Record history
+            const newEntry = {
+                tick,
+                natural: naturalCount,
+                integer: integerValue,
+                rational: rationalValue,
+                real: realValue,
+                complex: { real, imag }
+            };
+            history.unshift(newEntry);
+            if (history.length > 50) history.pop();
+            
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            // Update register displays
+            document.getElementById('entropyDisplay').textContent = entropy.toFixed(3);
+            document.getElementById('identityDisplay').textContent = identity;
+            document.getElementById('phaseDisplay').textContent = phase.toFixed(1);
+            document.getElementById('loadAccDisplay').textContent = loadAcc.toFixed(3);
+            document.getElementById('coherenceDisplay').textContent = coherence.toFixed(3);
+            
+            // Update entropy progress
+            const progress = Math.min(100, (entropy / threshold) * 100);
+            document.getElementById('entropyProgress').style.width = progress + '%';
+            document.getElementById('entropyFraction').textContent = `${entropy.toFixed(1)} / ${threshold}`;
+            
+            // Update phase vector
+            document.getElementById('phaseVector').style.transform = `translateX(-50%) rotate(${phase}deg)`;
+            document.getElementById('phaseAngle').textContent = phase.toFixed(1) + '°';
+            
+            // Update emerged numbers
+            document.getElementById('naturalValue').textContent = naturalCount;
+            document.getElementById('integerValue').textContent = integerValue;
+            document.getElementById('rationalValue').textContent = rationalValue.toFixed(3);
+            document.getElementById('realValue').textContent = realValue.toFixed(4);
+            document.getElementById('complexValue').textContent = 
+                `${complexValue.real.toFixed(2)} ${complexValue.imag >= 0 ? '+' : ''}${complexValue.imag.toFixed(2)}i`;
+            
+            // Update complex plane visualization
+            updateComplexPlane();
+        }
+
+        function updateComplexPlane() {
+            const plotContainer = document.getElementById('complexPlotPoints');
+            plotContainer.innerHTML = '';
+            
+            // Plot historical points
+            history.slice(0, 20).forEach((entry, index) => {
+                const point = document.createElement('div');
+                point.className = 'plot-point';
+                point.style.left = `${50 + entry.complex.real * 20}%`;
+                point.style.top = `${50 - entry.complex.imag * 20}%`;
+                point.style.backgroundColor = `rgba(255, 0, 0, ${1 - index * 0.05})`;
+                plotContainer.appendChild(point);
+            });
+            
+            // Plot current point
+            const currentPoint = document.createElement('div');
+            currentPoint.className = 'plot-point current-point';
+            currentPoint.style.left = `${50 + complexValue.real * 20}%`;
+            currentPoint.style.top = `${50 - complexValue.imag * 20}%`;
+            plotContainer.appendChild(currentPoint);
+        }
+
+        function toggleRunning() {
+            isRunning = !isRunning;
+            if (isRunning) {
+                toggleBtn.textContent = 'Pause';
+                stepBtn.disabled = true;
+                intervalId = setInterval(simulateTick, 200);
+            } else {
+                toggleBtn.textContent = 'Start';
+                stepBtn.disabled = false;
+                clearInterval(intervalId);
+            }
+        }
+
+        function reset() {
+            isRunning = false;
+            clearInterval(intervalId);
+            
+            entropy = 0;
+            identity = 1;
+            phase = 0;
+            loadAcc = 0;
+            coherence = 1;
+            tick = 0;
+            naturalCount = 0;
+            integerValue = 0;
+            rationalValue = 0;
+            realValue = 0;
+            complexValue = { real: 0, imag: 0 };
+            history = [];
+            angle = 0;
+            
+            toggleBtn.textContent = 'Start';
+            stepBtn.disabled = false;
+            
+            updateDisplay();
+        }
+
+        // Event listeners
+        toggleBtn.addEventListener('click', toggleRunning);
+        resetBtn.addEventListener('click', reset);
+        stepBtn.addEventListener('click', simulateTick);
+
+        // Initialize display
+        updateDisplay();
+    </script>
+</body>
+</html>

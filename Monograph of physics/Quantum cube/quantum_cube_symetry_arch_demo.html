@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Quantum Cube with Codec Costs</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 1fr 500px;
+            gap: 1.5rem;
+        }
+        
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .card-content {
+            padding: 1rem;
+        }
+        
+        #canvas-container {
+            width: 100%;
+            height: 520px;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background: #fff;
+        }
+        
+        .controls {
+            margin-top: 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.5rem;
+        }
+        
+        .angle-control {
+            grid-column: span 2;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 1rem;
+        }
+        
+        .view-controls {
+            margin-top: 0.75rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background: #2563eb;
+        }
+        
+        button.secondary {
+            background: #6b7280;
+        }
+        
+        button.secondary:hover {
+            background: #4b5563;
+        }
+        
+        button.high-cost {
+            background: #ef4444;
+        }
+        
+        button.high-cost:hover {
+            background: #dc2626;
+        }
+        
+        .slider {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #e5e7eb;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: none;
+        }
+        
+        select {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 1rem;
+            background: white;
+            cursor: pointer;
+        }
+        
+        input[type="text"], input[type="number"] {
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.75rem;
+            background: white;
+            font-family: monospace;
+        }
+        
+        input.hex-input {
+            width: 60px;
+            text-align: center;
+        }
+        
+        input.number-input {
+            width: 80px;
+        }
+        
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        h2 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        ul {
+            list-style-type: disc;
+            padding-left: 1.25rem;
+        }
+        
+        ol {
+            list-style-type: decimal;
+            padding-left: 1.25rem;
+        }
+        
+        li {
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+        }
+        
+        .wrapper-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .wrapper-item, .entropy-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .wrapper-label, .entropy-label {
+            width: 80px;
+            font-weight: 500;
+        }
+        
+        .note {
+            font-size: 0.75rem;
+            color: #6b7280;
+            font-style: italic;
+        }
+        
+        .small-text {
+            font-size: 0.875rem;
+        }
+        
+        .entropy-bar {
+            width: 100%;
+            height: 12px;
+            background: #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+        
+        .entropy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #a5b4fc, #60a5fa);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+        
+        .identity-display {
+            padding: 0.25rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.75rem;
+            background: #f9fafb;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        
+        .log-container {
+            max-height: 160px;
+            overflow-y: auto;
+            border: 1px solid #d1d5db;
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            background: #f9fafb;
+            font-family: monospace;
+            font-size: 0.75rem;
+        }
+        
+        .log-entry {
+            margin-bottom: 0.25rem;
+            color: #374151;
+        }
+        
+        .log-empty {
+            color: #6b7280;
+            font-style: italic;
+        }
+        
+        .entropy-controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin: 0.75rem 0;
+        }
+        
+        .cost-display {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .cost-value {
+            font-family: monospace;
+            font-weight: bold;
+        }
+        
+        .cost-high {
+            color: #dc2626;
+        }
+        
+        .cost-medium {
+            color: #d97706;
+        }
+        
+        .cost-low {
+            color: #059669;
+        }
+        
+        .constraint-warning {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            color: #991b1b;
+            font-size: 0.875rem;
+        }
+        
+        .spatial-tracker {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+        }
+        
+        .spatial-axis {
+            text-align: center;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            background: #f9fafb;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.25rem;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-x { background: #ef4444; }
+        .progress-y { background: #10b981; }
+        .progress-z { background: #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <div class="card">
+                <div class="card-content">
+                    <div id="canvas-container"></div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button onclick="rotateAbout('X')" id="rotateX">
+                    Rotate X <span class="cost-display-inline" id="costX">(cost: 10)</span>
+                </button>
+                <button onclick="rotateAbout('Y')" id="rotateY">
+                    Rotate Y <span class="cost-display-inline" id="costY">(cost: 10)</span>
+                </button>
+                <button onclick="rotateAbout('Z')" id="rotateZ">
+                    Rotate Z <span class="cost-display-inline" id="costZ">(cost: 1)</span>
+                </button>
+                
+                <div class="angle-control">
+                    <span class="small-text">Angle</span>
+                    <input type="range" class="slider" id="angleSlider" min="5" max="180" step="5" value="90" oninput="updateAngle(this.value)">
+                    <span id="angleDisplay" class="small-text" style="width: 35px; text-align: right;">90°</span>
+                </div>
+            </div>
+            
+            <div class="view-controls">
+                <span class="small-text">Snap view (measurement basis):</span>
+                <select id="basisSelect" onchange="snapView(this.value)">
+                    <option value="X">X</option>
+                    <option value="Y">Y</option>
+                    <option value="Z" selected>Z</option>
+                </select>
+                <button class="secondary" onclick="snapView(document.getElementById('basisSelect').value)">Align</button>
+                <button class="secondary" onclick="triggerEntropySink()">Force Entropy Sink</button>
+            </div>
+        </div>
+        
+        <div class="info-panel">
+            <div class="card">
+                <div class="card-content">
+                    <h2>Codec Cost Analysis</h2>
+                    <div class="cost-display">
+                        <div class="cost-item">
+                            <span>Total Operations:</span>
+                            <span class="cost-value" id="totalOps">0</span>
+                        </div>
+                        <div class="cost-item">
+                            <span>Cumulative Cost:</span>
+                            <span class="cost-value" id="totalCost">0</span>
+                        </div>
+                        <div class="cost-item">
+                            <span>Efficiency Ratio:</span>
+                            <span class="cost-value" id="efficiency">∞</span>
+                        </div>
+                        <div class="cost-item">
+                            <span>Max Entropy Budget:</span>
+                            <span class="cost-value" id="maxEntropy">1000</span>
+                        </div>
+                    </div>
+                    <div id="constraintWarning" class="constraint-warning" style="display: none;">
+                        Operation blocked: entropy budget exceeded
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-content">
+                    <h3>Wrapper Evolution (Live)</h3>
+                    <div class="wrapper-grid">
+                        <div class="wrapper-item">
+                            <span class="wrapper-label">Identity</span>
+                            <input type="text" class="hex-input" id="wrapperIdentity" value="00" readonly>
+                        </div>
+                        <div class="wrapper-item">
+                            <span class="wrapper-label">Phase</span>
+                            <input type="text" class="hex-input" id="wrapperPhase" value="00" readonly>
+                        </div>
+                        <div class="wrapper-item">
+                            <span class="wrapper-label">Spatial</span>
+                            <input type="text" class="hex-input" id="wrapperSpatial" value="00" readonly>
+                        </div>
+                        <div class="wrapper-item">
+                            <span class="wrapper-label">Entropy</span>
+                            <input type="text" class="hex-input" id="wrapperEntropy" value="00" readonly>
+                        </div>
+                        <div class="wrapper-item">
+                            <span class="wrapper-label">Coherence</span>
+                            <input type="text" class="hex-input" id="wrapperCoherence" value="FF" readonly>
+                        </div>
+                        <div class="wrapper-item">
+                            <span class="wrapper-label">LoadAcc</span>
+                            <input type="text" class="hex-input" id="wrapperLoadAcc" value="00" readonly>
+                        </div>
+                    </div>
+                    
+                    <h4 style="margin-top: 1rem; margin-bottom: 0.5rem;">Spatial Tracking</h4>
+                    <div class="spatial-tracker">
+                        <div class="spatial-axis">
+                            <div class="small-text">X-axis</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-x" id="spatialX" style="width: 0%"></div>
+                            </div>
+                            <div class="small-text" id="spatialXValue">0.0</div>
+                        </div>
+                        <div class="spatial-axis">
+                            <div class="small-text">Y-axis</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-y" id="spatialY" style="width: 0%"></div>
+                            </div>
+                            <div class="small-text" id="spatialYValue">0.0</div>
+                        </div>
+                        <div class="spatial-axis">
+                            <div class="small-text">Z-axis</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-z" id="spatialZ" style="width: 0%"></div>
+                            </div>
+                            <div class="small-text" id="spatialZValue">0.0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="note">Wrapper updates automatically based on register operations. Spatial tracks cumulative rotations per axis.</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <h3>Entropy Register (Valve)</h3>
+                    
+                    <div class="entropy-item" style="margin-bottom: 0.75rem;">
+                        <span class="entropy-label">Identity</span>
+                        <div class="identity-display" id="identityDisplay">0</div>
+                        <button class="secondary" onclick="resetEntropy()">Reset</button>
+                    </div>
+
+                    <div class="small-text" style="margin-bottom: 0.25rem;">
+                        Entropy: <span id="entropyValue">0</span> / <span id="thresholdValue">256</span>
+                    </div>
+                    <div class="entropy-bar">
+                        <div class="entropy-fill" id="entropyFill" style="width: 0%"></div>
+                    </div>
+
+                    <div class="entropy-controls">
+                        <div class="entropy-item">
+                            <span class="entropy-label">Threshold</span>
+                            <input type="number" class="number-input" id="thresholdInput" value="256" onchange="updateThreshold(this.value)">
+                        </div>
+                        <div class="entropy-item">
+                            <span class="entropy-label">Accum X</span>
+                            <input type="number" class="number-input" id="accumX" value="1" onchange="updateAccum('X', this.value)">
+                        </div>
+                        <div class="entropy-item">
+                            <span class="entropy-label">Accum Y</span>
+                            <input type="number" class="number-input" id="accumY" value="1" onchange="updateAccum('Y', this.value)">
+                        </div>
+                        <div class="entropy-item">
+                            <span class="entropy-label">Accum Z</span>
+                            <input type="number" class="number-input" id="accumZ" value="1" onchange="updateAccum('Z', this.value)">
+                        </div>
+                    </div>
+
+                    <div class="note">
+                        Rotation by <strong><span id="angleInNote">90</span>°</strong> along axis adds <strong>deg × Accum[axis] × cost</strong> to register. Operations blocked when entropy budget exceeded.
+                    </div>
+
+                    <div class="log-container" id="logContainer">
+                        <div class="log-empty">No operations yet.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let scene, camera, renderer, cube, blochArrow, blochDir;
+        let deg = 90;
+        
+        // Enhanced wrapper state with evolution tracking
+        let wrapper = {
+            Identity: 0,
+            Phase: 0,
+            Spatial: 0,
+            Entropy: 0,
+            Coherence: 255,
+            LoadAcc: 0
+        };
+
+        // Codec cost system
+        const codecCosts = {
+            scalar: 1,    // Identity operations (Z rotations)
+            vector: 10,   // Phase/Coherence operations (X/Y rotations)
+            tensor: 47    // LoadAcc/gravitational operations (future expansion)
+        };
+
+        // Spatial tracking for each axis
+        let spatialTracking = { X: 0, Y: 0, Z: 0 };
+
+        // Entropy system variables
+        let identity = 0;
+        let entropy = 0;
+        let threshold = 256;
+        let accum = { X: 1, Y: 1, Z: 1 };
+        let log = [];
+        
+        // Cost tracking
+        let totalOperations = 0;
+        let cumulativeCost = 0;
+        let maxEntropyBudget = 1000;
+
+        // Mouse controls
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let spherical = new THREE.Spherical();
+
+        function getOperationType(axisLetter) {
+            if (axisLetter === 'Z') return 'scalar';
+            if (axisLetter === 'Y') return 'vector';
+            if (axisLetter === 'X') return 'tensor';
+            return 'vector';
+        }
+
+        function calculateOperationCost(axisLetter, angle) {
+            const operationType = getOperationType(axisLetter);
+            const baseCost = codecCosts[operationType];
+            const angleFactor = angle / 90; // Normalize to 90-degree operations
+            const accumFactor = accum[axisLetter] || 1;
+            return Math.round(baseCost * angleFactor * accumFactor);
+        }
+
+        function checkEntropyConstraints(operationCost) {
+            const projectedEntropy = entropy + operationCost;
+            const projectedTotal = cumulativeCost + operationCost;
+            
+            if (projectedTotal > maxEntropyBudget) {
+                document.getElementById('constraintWarning').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('constraintWarning').style.display = 'none';
+                }, 3000);
+                return false;
+            }
+            
+            if (projectedEntropy >= threshold) {
+                // This will trigger an entropy sink, which is allowed
+                return true;
+            }
+            
+            return true;
+        }
+
+        function triggerEntropySink(entropyDelta = null) {
+            const energyCost = entropyDelta || entropy;
+            
+            // Identity flip
+            identity = 1 - identity;
+            wrapper.Identity = identity;
+            
+            // Update LoadAcc with energy cost
+            wrapper.LoadAcc = Math.min(255, Math.round(energyCost));
+            
+            // Reset entropy
+            entropy = 0;
+            wrapper.Entropy = 0;
+            
+            // Log the entropy sink event
+            const logEntry = `entropy-sink @${new Date().toLocaleTimeString()} energy=${energyCost.toFixed(1)} → Identity=${identity}`;
+            log.unshift(logEntry);
+            if (log.length > 30) log.pop();
+            
+            updateWrapperDisplay();
+            updateLogDisplay();
+            updateEntropyDisplay();
+        }
+
+        function updateWrapperEvolution(axisLetter, angle, operationCost) {
+            // Update spatial tracking
+            spatialTracking[axisLetter] += angle;
+            if (spatialTracking[axisLetter] > 360) spatialTracking[axisLetter] -= 360;
+            
+            // Calculate composite spatial value (weighted sum of all axes)
+            const spatialComposite = (spatialTracking.X * 0.4 + spatialTracking.Y * 0.35 + spatialTracking.Z * 0.25) % 255;
+            wrapper.Spatial = Math.round(spatialComposite);
+            
+            // Update phase based on Y-axis rotations primarily
+            const phaseValue = (spatialTracking.Y / 360) * 255;
+            wrapper.Phase = Math.round(phaseValue);
+            
+            // Update coherence (decreases with total operations, but regenerates slowly)
+            const coherenceFactor = Math.max(0.1, 1 - (totalOperations * 0.02));
+            wrapper.Coherence = Math.round(255 * coherenceFactor);
+            
+            // Update entropy
+            wrapper.Entropy = Math.min(255, Math.round(entropy));
+            
+            updateWrapperDisplay();
+            updateSpatialDisplay();
+        }
+
+        function updateWrapperDisplay() {
+            document.getElementById('wrapperIdentity').value = wrapper.Identity.toString(16).padStart(2, '0').toUpperCase();
+            document.getElementById('wrapperPhase').value = wrapper.Phase.toString(16).padStart(2, '0').toUpperCase();
+            document.getElementById('wrapperSpatial').value = wrapper.Spatial.toString(16).padStart(2, '0').toUpperCase();
+            document.getElementById('wrapperEntropy').value = wrapper.Entropy.toString(16).padStart(2, '0').toUpperCase();
+            document.getElementById('wrapperCoherence').value = wrapper.Coherence.toString(16).padStart(2, '0').toUpperCase();
+            document.getElementById('wrapperLoadAcc').value = wrapper.LoadAcc.toString(16).padStart(2, '0').toUpperCase();
+        }
+
+        function updateSpatialDisplay() {
+            // Update spatial axis displays
+            ['X', 'Y', 'Z'].forEach(axis => {
+                const percentage = (spatialTracking[axis] / 360) * 100;
+                const value = spatialTracking[axis].toFixed(1);
+                
+                document.getElementById(`spatial${axis}`).style.width = percentage + '%';
+                document.getElementById(`spatial${axis}Value`).textContent = value + '°';
+            });
+        }
+
+        function updateCostDisplay() {
+            document.getElementById('totalOps').textContent = totalOperations;
+            document.getElementById('totalCost').textContent = cumulativeCost;
+            document.getElementById('efficiency').textContent = totalOperations > 0 ? 
+                (cumulativeCost / totalOperations).toFixed(1) : '∞';
+            document.getElementById('maxEntropy').textContent = maxEntropyBudget;
+            
+            // Update button cost displays
+            ['X', 'Y', 'Z'].forEach(axis => {
+                const cost = calculateOperationCost(axis, deg);
+                const button = document.getElementById(`rotate${axis}`);
+                const costSpan = document.getElementById(`cost${axis}`);
+                
+                costSpan.textContent = `(cost: ${cost})`;
+                
+                // Color code buttons by cost
+                button.className = cost >= 47 ? 'button high-cost' : 
+                                  cost >= 10 ? 'button' : 'button';
+            });
+        }
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xffffff);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(50, 800 / 520, 0.1, 1000);
+            camera.position.set(2.6, 2.1, 2.8);
+            spherical.setFromVector3(camera.position);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(800, 520);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Lights
+            const hemi = new THREE.HemisphereLight(0xffffff, 0x808080, 1.0);
+            scene.add(hemi);
+            const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+            dir.position.set(4, 5, 6);
+            scene.add(dir);
+
+            // Axes helper
+            const axes = new THREE.AxesHelper(1.7);
+            scene.add(axes);
+
+            // Create cube with labeled faces
+            createCube();
+            
+            // Create Bloch sphere
+            createBlochSphere();
+
+            // Floor grid
+            const grid = new THREE.GridHelper(10, 10, 0x999999, 0xdddddd);
+            grid.position.y = -1.1;
+            scene.add(grid);
+
+            // Mouse controls
+            setupControls();
+
+            // Resize handler
+            window.addEventListener('resize', onWindowResize);
+            onWindowResize();
+
+            // Initialize displays
+            updateCostDisplay();
+            updateWrapperDisplay();
+            updateSpatialDisplay();
+
+            // Start animation loop
+            animate();
+        }
+
+        function createCube() {
+            const size = 1.2;
+            const faceTexts = ["+X", "-X", "+Y", "-Y", "+Z", "-Z"];
+            
+            function makeFaceMaterial(label) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                
+                // Gradient background
+                const grad = ctx.createLinearGradient(0, 0, 512, 512);
+                grad.addColorStop(0, '#f3f4f6');
+                grad.addColorStop(1, '#e5e7eb');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 512, 512);
+                
+                // Frame
+                ctx.strokeStyle = '#9ca3af';
+                ctx.lineWidth = 10;
+                ctx.strokeRect(10, 10, 492, 492);
+                
+                // Label
+                ctx.fillStyle = '#111827';
+                ctx.font = 'bold 180px Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(label, 256, 260);
+                
+                return new THREE.MeshPhongMaterial({ map: new THREE.CanvasTexture(canvas) });
+            }
+
+            const materials = faceTexts.map(text => makeFaceMaterial(text));
+            const geometry = new THREE.BoxGeometry(size, size, size);
+            cube = new THREE.Mesh(geometry, materials);
+            scene.add(cube);
+        }
+
+        function createBlochSphere() {
+            const blochGroup = new THREE.Group();
+            
+            // Transparent sphere
+            const sphere = new THREE.Mesh(
+                new THREE.SphereGeometry(0.9, 32, 32),
+                new THREE.MeshPhongMaterial({ 
+                    color: 0xdddddd, 
+                    transparent: true, 
+                    opacity: 0.25, 
+                    shininess: 5 
+                })
+            );
+            blochGroup.add(sphere);
+
+            // Wireframe
+            const wireframe = new THREE.LineSegments(
+                new THREE.WireframeGeometry(new THREE.SphereGeometry(0.9, 12, 12)),
+                new THREE.LineBasicMaterial({ color: 0x888888 })
+            );
+            blochGroup.add(wireframe);
+
+            // State vector arrow
+            blochDir = new THREE.Vector3(0, 0, 1); // Start at +Z
+            blochArrow = new THREE.ArrowHelper(
+                blochDir.clone().normalize(), 
+                new THREE.Vector3(0, 0, 0), 
+                1.0, 
+                0x111111, 
+                0.08, 
+                0.05
+            );
+            blochGroup.add(blochArrow);
+
+            scene.add(blochGroup);
+        }
+
+        function setupControls() {
+            renderer.domElement.addEventListener('mousedown', onMouseDown);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mouseup', onMouseUp);
+            renderer.domElement.addEventListener('wheel', onWheel);
+        }
+
+        function onMouseDown(event) {
+            isDragging = true;
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+        }
+
+        function onMouseMove(event) {
+            if (!isDragging) return;
+            
+            const deltaMove = {
+                x: event.clientX - previousMousePosition.x,
+                y: event.clientY - previousMousePosition.y
+            };
+
+            spherical.theta -= deltaMove.x * 0.01;
+            spherical.phi += deltaMove.y * 0.01;
+            spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+
+            camera.position.setFromSpherical(spherical);
+            camera.lookAt(0, 0, 0);
+
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+        }
+
+        function onMouseUp() {
+            isDragging = false;
+        }
+
+        function onWheel(event) {
+            spherical.radius += event.deltaY * 0.01;
+            spherical.radius = Math.max(1, Math.min(10, spherical.radius));
+            camera.position.setFromSpherical(spherical);
+            camera.lookAt(0, 0, 0);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            const width = container.clientWidth;
+            const height = 520;
+            
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        // Control functions
+        function rotateAbout(axisLetter) {
+            const operationCost = calculateOperationCost(axisLetter, deg);
+            
+            // Check entropy constraints
+            if (!checkEntropyConstraints(operationCost)) {
+                return; // Operation blocked
+            }
+            
+            const radians = THREE.MathUtils.degToRad(deg);
+            const axis = 
+                axisLetter === 'X' ? new THREE.Vector3(1, 0, 0) :
+                axisLetter === 'Y' ? new THREE.Vector3(0, 1, 0) :
+                new THREE.Vector3(0, 0, 1);
+
+            // Rotate cube
+            cube.rotateOnWorldAxis(axis, radians);
+
+            // Rotate Bloch vector
+            const quaternion = new THREE.Quaternion().setFromAxisAngle(axis, radians);
+            blochDir.applyQuaternion(quaternion);
+            blochArrow.setDirection(blochDir.clone().normalize());
+
+            // Update entropy with cost-weighted accumulation
+            entropy += operationCost;
+            
+            // Update tracking
+            totalOperations++;
+            cumulativeCost += operationCost;
+
+            // Check for entropy threshold
+            if (entropy >= threshold) {
+                triggerEntropySink(entropy);
+            }
+            
+            // Update wrapper evolution
+            updateWrapperEvolution(axisLetter, deg, operationCost);
+            
+            // Update displays
+            updateEntropyDisplay();
+            updateCostDisplay();
+            
+            // Add to log
+            const logEntry = `${axisLetter}-rot @${new Date().toLocaleTimeString()} ${deg}° cost=${operationCost} entropy=${entropy.toFixed(1)}`;
+            log.unshift(logEntry);
+            if (log.length > 30) log.pop();
+            updateLogDisplay();
+        }
+
+        function snapView(axisLetter) {
+            const R = 2.6;
+            let pos;
+            if (axisLetter === 'X') pos = new THREE.Vector3(R, 0.7, 0.001);
+            else if (axisLetter === 'Y') pos = new THREE.Vector3(0.7, R, 0.001);
+            else pos = new THREE.Vector3(0.7, 0.7, R);
+            
+            camera.position.copy(pos);
+            camera.lookAt(0, 0, 0);
+            spherical.setFromVector3(camera.position);
+        }
+
+        function updateAngle(value) {
+            deg = parseInt(value);
+            document.getElementById('angleDisplay').textContent = deg + '°';
+            document.getElementById('angleInNote').textContent = deg;
+            updateCostDisplay(); // Recalculate costs based on new angle
+        }
+
+        function updateThreshold(value) {
+            threshold = Math.max(1, parseInt(value) || 1);
+            document.getElementById('thresholdValue').textContent = threshold;
+            updateEntropyDisplay();
+        }
+
+        function updateAccum(axis, value) {
+            accum[axis] = parseFloat(value) || 0;
+            updateCostDisplay(); // Recalculate costs based on new accumulator
+        }
+
+        function updateEntropyDisplay() {
+            document.getElementById('entropyValue').textContent = Math.round(entropy);
+            const percentage = Math.min(100, (entropy / threshold) * 100);
+            document.getElementById('entropyFill').style.width = percentage + '%';
+            document.getElementById('identityDisplay').textContent = identity;
+        }
+
+        function updateLogDisplay() {
+            const container = document.getElementById('logContainer');
+            if (log.length === 0) {
+                container.innerHTML = '<div class="log-empty">No operations yet.</div>';
+            } else {
+                container.innerHTML = log.map(entry => `<div class="log-entry">${entry}</div>`).join('');
+            }
+        }
+
+        function resetEntropy() {
+            identity = 0;
+            entropy = 0;
+            totalOperations = 0;
+            cumulativeCost = 0;
+            spatialTracking = { X: 0, Y: 0, Z: 0 };
+            
+            wrapper = {
+                Identity: 0,
+                Phase: 0,
+                Spatial: 0,
+                Entropy: 0,
+                Coherence: 255,
+                LoadAcc: 0
+            };
+            
+            log = [];
+            
+            updateEntropyDisplay();
+            updateCostDisplay();
+            updateWrapperDisplay();
+            updateSpatialDisplay();
+            updateLogDisplay();
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
