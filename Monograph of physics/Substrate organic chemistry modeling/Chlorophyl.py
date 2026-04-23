@@ -7,12 +7,13 @@ from typing import Dict, List
 # ============================================================
 
 LIGHT_WAVELENGTHS = {
-    "white": 550,
     "red": 680,
     "blue": 430,
     "green": 550,
     "far_red": 730
 }
+
+WHITE_SPECTRUM = [430, 480, 550, 620, 680]  # representative sampling
 
 # ============================================================
 # CODECS
@@ -55,8 +56,26 @@ class ChlorophyllMolecule:
 
     def photon_absorption(self, wavelength_nm):
         freq_thz = 300000 / wavelength_nm
-        efficiency = max(0.1, 1.0 - min(abs(wavelength_nm - p) / 100 for p in self.absorption_peaks))
+        efficiency = max(
+            0.1,
+            1.0 - min(abs(wavelength_nm - p) / 100 for p in self.absorption_peaks)
+        )
         return self.codec2.vector_absorption(freq_thz, efficiency)
+
+    def photon_absorption_white(self):
+        total_energy = 0
+        absorbed_any = False
+
+        for wl in WHITE_SPECTRUM:
+            result = self.photon_absorption(wl)
+            if result["absorbed"]:
+                absorbed_any = True
+                total_energy += result["energy_ev"]
+
+        return {
+            "absorbed": absorbed_any,
+            "energy_ev": total_energy
+        }
 
 
 # ============================================================
@@ -69,7 +88,11 @@ class PhotosystemII:
         self.codec6 = Codec6()
 
     def water_oxidation(self, photon_flux):
-        absorb = self.chl.photon_absorption(photon_flux["wavelength"])
+        if photon_flux.get("broadband"):
+            absorb = self.chl.photon_absorption_white()
+        else:
+            absorb = self.chl.photon_absorption(photon_flux["wavelength"])
+        
         if not absorb["absorbed"]:
             return {"success": False}
 
@@ -112,7 +135,11 @@ class PhotosystemI:
         if electrons <= 0:
             return {"success": False}
 
-        absorb = self.chl.photon_absorption(photon_flux["wavelength"])
+        if photon_flux.get("broadband"):
+            absorb = self.chl.photon_absorption_white()
+        else:
+            absorb = self.chl.photon_absorption(photon_flux["wavelength"])
+        
         if not absorb["absorbed"]:
             return {"success": False}
 
@@ -154,7 +181,8 @@ class Chloroplast:
 
         return {
             "factor": temp_factor * co2_factor * quality_factor,
-            "wavelength": LIGHT_WAVELENGTHS.get(light_quality, 680)
+            "wavelength": LIGHT_WAVELENGTHS.get(light_quality, 680),
+            "broadband": light_quality == "white"
         }
 
     def step(self, light_intensity, temperature=25, co2=400, light_quality="white"):
@@ -162,7 +190,8 @@ class Chloroplast:
 
         photon_flux = {
             "intensity": light_intensity * env["factor"],
-            "wavelength": env["wavelength"]
+            "wavelength": env["wavelength"],
+            "broadband": env.get("broadband", False)
         }
 
         psii = self.psii.water_oxidation(photon_flux)
